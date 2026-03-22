@@ -66,6 +66,25 @@ class Trainer:
 
         self.opt = torch.optim.Adam(self.model.parameters(), lr=float(lr), weight_decay=float(weight_decay))
 
+        # ---- 初始化注意力索引（用于第一个 epoch 的 forward）----
+        self._init_attention_indices()
+
+    def _init_attention_indices(self) -> None:
+        """Initialize attention indices before first training epoch."""
+        # 先用全零索引初始化（用于首次 forward 采样）
+        # 注意：uu_norm_adj 是 U×U 的，用户数从 uu_norm_adj 的形状获取
+        num_users = self.uu_norm_adj.shape[0]
+        topk = self.attn_cfg.topk
+        self.model.init_attn_indices(num_users, topk, self.device)
+        
+        with torch.no_grad():
+            self.model.eval()
+            out_full = self.model(self.ui_norm_adj, self.uu_norm_adj)
+            self.user_attn_indices = self.attn_sampler.sample(
+                out_full.user_ui, out_full.user_uu, self.uu_norm_adj
+            )
+            self.model.set_attn_indices(self.user_attn_indices)
+
     def _inject_topology_signals(self, cfg: TopoPEConfig) -> None:
         device = self.device
 

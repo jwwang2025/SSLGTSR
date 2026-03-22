@@ -135,6 +135,13 @@ class SSLGTSR(nn.Module):
         """
         self._attn_indices = attn_indices
 
+    def init_attn_indices(self, num_users: int, topk: int, device: torch.device) -> None:
+        """
+        初始化注意力索引（用于首次 forward 采样前）。
+        使用全零索引作为占位符，采样后会替换。
+        """
+        self._attn_indices = torch.zeros(num_users, topk, dtype=torch.long, device=device)
+
     def _init_with_topo(self, ui_x0: torch.Tensor, uu_x0: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """如果启用了拓扑位置编码，则对初始嵌入进行编码。"""
         if self.topo_encoder is not None:

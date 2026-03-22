@@ -74,37 +74,37 @@ def convert_lastfm(
                 continue
             u = cols[0]
             v = cols[1]
-            f.write(f\"{u}\t{v}\n\")
+            f.write(f"{u}\t{v}\n")
 
-    print(f\"Wrote interactions to {inter_out}\")
-    print(f\"Wrote social edges to {social_out}\")
+    print(f"Wrote interactions to {inter_out}")
+    print(f"Wrote social edges to {social_out}")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument(
-        \"--src_dir\",
+        "--src_dir",
         type=str,
         required=True,
-        help=\"Path to original HetRec LastFM 2K directory (e.g. dataset/hetrec2011-lastfm-2k)\",
+        help="Path to original HetRec LastFM 2K directory (e.g. dataset/hetrec2011-lastfm-2k)",
     )
     ap.add_argument(
-        \"--out_dir\",
+        "--out_dir",
         type=str,
         required=True,
-        help=\"Output directory for interactions.txt / social.txt (e.g. data/lastfm)\",
+        help="Output directory for interactions.txt / social.txt (e.g. data/lastfm)",
     )
     ap.add_argument(
-        \"--min_weight\",
+        "--min_weight",
         type=int,
         default=0,
-        help=\"Optional: minimum play-count weight to keep a (user, artist) interaction.\",
+        help="Optional: minimum play-count weight to keep a (user, artist) interaction.",
     )
     args = ap.parse_args()
     convert_lastfm(args.src_dir, args.out_dir, min_weight=args.min_weight)
 
 
-if __name__ == \"__main__\":
+if __name__ == "__main__":
     main()
 
 

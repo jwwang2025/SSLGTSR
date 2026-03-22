@@ -165,7 +165,12 @@ class SocialRecDataset:
                 uu = np.column_stack([a[keep], b[keep]]).astype(np.int64)
                 # if we re-indexed users due to filtering, map again
                 if "new_user_map" in locals():
-                    uu = np.vectorize(new_user_map.get)(uu).astype(np.int64)
+                    def map_to_new_id(x: int) -> int:
+                        return new_user_map.get(int(x), -1)
+                    a = np.vectorize(map_to_new_id)(uu[:, 0])
+                    b = np.vectorize(map_to_new_id)(uu[:, 1])
+                    keep = (a >= 0) & (b >= 0)
+                    uu = np.column_stack([a[keep], b[keep]]).astype(np.int64)
         else:
             uu = np.zeros((0, 2), dtype=np.int64)
 
