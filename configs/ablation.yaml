@@ -1,0 +1,79 @@
+# Hyperparameter search configuration for SSLGTSR
+# Section 4.3: Ablation Study
+
+# Base configuration (will be overridden by search parameters)
+base:
+  seed: 42
+  device: "cuda"
+  data:
+    interactions_file: "interactions.txt"
+    social_file: "social.txt"
+    is_social_directed: false
+    val_ratio: 0.1
+    test_ratio: 0.1
+    min_user_interactions: 5
+  model:
+    emb_dim: 64
+    n_layers: 4
+    transformer:
+      n_heads: 2
+      dropout: 0.1
+    topo_pe:
+      enabled: false
+    cross_view_ssl:
+      enabled: false
+    ssl:
+      temperature: 0.2
+      edge_drop_rate: 0.1
+      feature_drop_rate: 0.1
+  train:
+    epochs: 50
+    batch_size: 1024
+    lr: 0.001
+    weight_decay: 0.0
+    log_every: 20
+    eval_every: 1
+    topk: [10, 20]
+    early_stopping_patience: 10
+    runs_dir: "runs"
+
+# Hyperparameter search settings
+search:
+  # Experiment name prefix
+  name: "ablation"
+
+  # Parameter to search: attn_sample_size (t)
+  # Section 4.3.1: Effect of attention sample size
+  attn_sample_size:
+    values: [5, 10, 15, 20, 25, 30]
+    fixed:
+      n_layers: 4
+      bpr_reg: 1.0e-5
+      ssl:
+        weight: 1.0e-5
+
+  # Parameter to search: num_layers (K)
+  # Section 4.3.2: Effect of message propagation layers
+  num_layers:
+    values: [1, 2, 3, 4, 5, 6]
+    fixed:
+      attn_sample_size: 15
+      bpr_reg: 1.0e-5
+      ssl:
+        weight: 1.0e-5
+
+  # Parameter to search: ssl_weight (lambda2)
+  # Section 4.3.3: Effect of SSL loss weight
+  ssl_weight:
+    values: [1.0e-6, 1.0e-5, 1.0e-4, 1.0e-3]
+    fixed:
+      attn_sample_size: 15
+      n_layers: 4
+      bpr_reg: 1.0e-5
+
+# Evaluation metric to use for selecting best config
+# Options: Recall@10, Recall@20, NDCG@10, NDCG@20
+eval_metric: "NDCG@10"
+
+# Data directory
+data_dir: "data/lastfm"
