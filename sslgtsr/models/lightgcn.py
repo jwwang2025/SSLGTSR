@@ -12,9 +12,9 @@ def lightgcn_propagate(
     norm_adj: torch.Tensor, x: torch.Tensor, n_layers: int
 ) -> torch.Tensor:
     """
-    LightGCN propagation: average of embeddings across layers.
-    norm_adj: sparse normalized adjacency (N x N)
-    x: dense node embeddings (N x D)
+    LightGCN 传播：对各层的嵌入向量取平均。
+    norm_adj：稀疏归一化邻接矩阵 (N × N)
+    x：稠密节点嵌入向量 (N × D)
     """
     out = x
     embs = [x]
