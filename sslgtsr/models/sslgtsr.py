@@ -9,16 +9,12 @@ import torch
 import torch.nn as nn
 
 from sslgtsr.data.graph import coo_to_torch_sparse, edge_dropout_coo
-from sslgtsr.models.lightgcn import lightgcn_propagate
+from sslgtsr.models.lightgcn_layer import lightgcn_propagate
 from sslgtsr.models.ssl import FeatureDropout, info_nce_loss
 from sslgtsr.models.cross_view_ssl import CrossViewSSLConfig, LearnableSimilarity, cross_view_align_loss
 from sslgtsr.models.topo_pe import TopoPEConfig, TopologyPositionEncoder
-from sslgtsr.models.transformer_fusion import (
-    MultiHeadAttention,
-    TransformerAttentionBlock,
-    PropagationBlock,
-    TwoViewFusion,
-)
+from sslgtsr.models.propagation_block import PropagationBlock
+from sslgtsr.models.fusion_layer import TwoViewFusion
 
 
 @dataclass
