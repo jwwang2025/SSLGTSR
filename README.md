@@ -1,90 +1,125 @@
-## SSLGTSR (Reproduction Scaffold)
+## SSLGTSR (Social Recommendation with Graph Neural Networks)
 
-本仓库提供论文 **“Social Recommendation with Graph Neural Networks Integrating Transformer and Self-Supervised Learning”** 的一个**可运行复现工程骨架**（PyTorch 实现），包含：
+本项目实现了论文 **"Social Recommendation with Graph Neural Networks Integrating Transformer and Self-Supervised Learning"** 的完整框架（PyTorch 实现）。
 
-- **数据**：用户-物品交互图（UI graph）与用户-用户社交图（UU graph）的加载与稀疏图构建
-- **模型**：两路 LightGCN 编码（UI 与 UU）+ **Transformer 融合**（跨视图自注意力）
-- **训练**：BPR 主损失 + 图增强 **对比学习自监督损失（InfoNCE）**
-- **评测**：HR@K、NDCG@K（Top-K 推荐）
-- **可跑**：自带 toy 数据生成器，可端到端 smoke run
+### 核心特性
 
-> 说明：由于 PDF 文本在当前环境下不可直接抽取检索，本实现对齐了该类论文最常用的“GNN + Transformer + SSL”范式，并把关键组件做成可插拔模块；你拿到论文精确公式后，可以在 `sslgtsr/models/` 下替换对应模块实现以 1:1 对齐。
+- **双视角图编码**：用户-物品交互图 (UI Graph) + 用户-用户社交图 (UU Graph)
+- **LightGCN 传播**：轻量级图卷积网络，保留多层嵌入用于融合
+- **Transformer 融合**：基于注意力采样的跨视图自注意力机制
+- **自监督学习**：图增强对比学习 (InfoNCE) + 跨视图对齐
+- **拓扑感知位置编码**：最短路径距离、节点度、PageRank
 
 ### 目录结构
 
 ```
 SSLGTSR/
-  configs/
-    default.yaml
-  scripts/
-    make_toy_data.py
-  sslgtsr/
-    __init__.py
-    cli.py
-    data/
-      __init__.py
-      dataset.py
-      graph.py
-      sampling.py
-    models/
-      __init__.py
-      lightgcn.py
-      transformer_fusion.py
-      ssl.py
-      sslgtsr.py
-    training/
-      __init__.py
-      losses.py
-      metrics.py
-      trainer.py
-    utils/
-      __init__.py
-      config.py
-      logging.py
-      seed.py
-  train.py
-  evaluate.py
-  requirements.txt
+├── configs/                 # 配置文件
+│   ├── default.yaml        # 默认配置
+│   └── ablation.yaml       # 消融实验配置
+├── scripts/                # 数据处理脚本
+│   ├── make_toy_data.py   # 生成玩具数据
+│   └── prepare_lastfm.py  # 转换 LastFM 数据集
+├── sslgtsr/               # 核心代码
+│   ├── __init__.py
+│   ├── models/            # 模型模块
+│   │   ├── sslgtsr.py         # 主模型 (SSLGTSR)
+│   │   ├── lightgcn_layer.py  # LightGCN 层
+│   │   ├── transformer_layer.py # Transformer 层
+│   │   ├── propagation_block.py # 传播块
+│   │   ├── fusion_layer.py    # 双视角融合
+│   │   ├── attn_sampling.py   # 注意力采样
+│   │   ├── topo_pe.py         # 拓扑位置编码
+│   │   └── cross_view_ssl.py  # 跨视图 SSL
+│   ├── data/              # 数据处理
+│   │   ├── dataset.py       # 数据集加载
+│   │   ├── graph.py         # 图构建
+│   │   └── sampling.py      # BPR 采样
+│   ├── training/          # 训练相关
+│   │   ├── trainer.py      # 训练器
+│   │   ├── losses.py       # 损失函数
+│   │   └── metrics.py      # 评估指标
+│   └── utils/             # 工具函数
+│       ├── config.py      # 配置加载
+│       ├── logging.py     # 日志记录
+│       └── seed.py        # 随机种子
+├── train.py              # 训练入口
+├── evaluate.py            # 评估入口
+├── search_hyperparams.py # 超参数搜索
+└── test_pipeline.py      # 管道测试
 ```
 
 ### 安装
-
-建议使用 Python 3.10+（本项目仅依赖 PyTorch / NumPy / SciPy / PyYAML）。
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 1) 准备数据
+### 快速开始
 
-数据格式采用最常见的 “txt 三列/两列”：
-
-- `data/interactions.txt`: 每行 `user_id item_id`（空格或 tab 分隔），隐式反馈（出现即正样本）
-- `data/social.txt`: 每行 `user_id user_id`（无向或有向均可，配置里可指定）
-
-也可以先用 toy 数据跑通：
+#### 1. 生成玩具数据
 
 ```bash
 python scripts/make_toy_data.py --out_dir data/toy --n_users 200 --n_items 300
 ```
 
-### 2) 训练
+#### 2. 训练模型
 
 ```bash
 python train.py --config configs/default.yaml --data_dir data/toy
 ```
 
-### 3) 评测
+#### 3. 评估模型
 
 ```bash
 python evaluate.py --config configs/default.yaml --data_dir data/toy --ckpt runs/latest/model.pt
 ```
 
-### 常见对齐点（你从论文里核对）
+### 论文公式对照
 
-- **图编码器**：是否是 LightGCN / GAT / GraphSAGE；如果不是，替换 `sslgtsr/models/lightgcn.py`
-- **Transformer**：融合对象是（UI-view, UU-view）还是多层多头跨层 token；替换 `sslgtsr/models/transformer_fusion.py`
-- **自监督任务**：本文实现的是“跨视图对比 + 图增强”；若论文是 mask-attribute / neighborhood prediction 等，替换 `sslgtsr/models/ssl.py`
-- **训练目标**：BPR vs CE；替换 `sslgtsr/training/losses.py`
+| 公式 | 描述 | 实现位置 |
+|------|------|----------|
+| (1)-(3) | 注意力采样 | `attn_sampling.py` |
+| (7) | 拓扑位置编码 | `topo_pe.py` |
+| (8)-(10) | 多头自注意力 | `transformer_layer.py` |
+| (11) | Transformer 层 | `transformer_layer.py` |
+| (12)-(14) | LightGCN 传播 | `lightgcn_layer.py` |
+| (15) | 双视角融合 | `fusion_layer.py` |
+| (16)-(17) | 自监督学习 | `cross_view_ssl.py`, `ssl.py` |
 
+### 配置文件说明
 
+主要超参数（`configs/default.yaml`）：
+
+```yaml
+model:
+  emb_dim: 64              # 嵌入维度
+  n_layers: 4              # 传播层数 K
+  transformer:
+    n_heads: 2            # 注意力头数
+    dropout: 0.1          # Dropout 概率
+  attn_sample_size: 15    # 注意力样本数 t
+  ssl:
+    temperature: 0.2       # InfoNCE 温度参数
+    edge_drop_rate: 0.1   # 边 Dropout 率
+    feature_drop_rate: 0.1 # 特征 Dropout 率
+    weight: 1.0e-5        # SSL 损失权重
+
+train:
+  epochs: 50
+  batch_size: 1024
+  lr: 0.001
+  eval_every: 1
+  topk: [10, 20]
+  early_stopping_patience: 10
+```
+
+### 数据格式
+
+- `interactions.txt`: 每行 `user_id item_id`（Tab 分隔）
+- `social.txt`: 每行 `user_id user_id`（Tab 分隔）
+
+### 评估指标
+
+- Recall@K
+- NDCG@K
